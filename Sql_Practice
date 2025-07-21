@@ -1,1 +1,104 @@
+1. Row_Number ()
 
+### **Query 1: Top N per Group (Departments)**
+
+> This used ROW_NUMBER() with PARTITION BY to get top 2 salaries per department.
+> 
+
+```sql
+sql
+CopyEdit
+WITH Data AS (
+  SELECT *,
+         ROW_NUMBER() OVER (
+           PARTITION BY department
+           ORDER BY salary DESC
+         ) AS rn
+  FROM products
+)
+
+SELECT * FROM Data
+WHERE rn <= 2;
+```
+
+### **Query 2: Filter Duplicate Emails (Students Table)**
+
+> This query identified students who shared the same email but had different names.
+> 
+
+```sql
+sql
+CopyEdit
+SELECT s.student_id,
+       s.full_name AS real_name,
+       P.full_name AS same_name,
+       s.email AS common_email
+FROM Students s
+INNER JOIN Students P
+  ON s.email = P.email
+WHERE s.full_name != P.full_name
+  AND s.student_id < P.student_id;
+
+```
+
+### **Query 3: Students with Marks Less Than Their Average**
+
+```sql
+sql
+CopyEdit
+WITH record AS (
+  SELECT *
+  FROM students s
+  JOIN marks m ON s.id = m.student_id
+),
+greater AS (
+  SELECT name,
+         AVG(marks) AS avg
+  FROM record
+  GROUP BY id, name
+)
+SELECT name
+FROM greater
+WHERE marks < avg;
+
+```
+
+1. **RANK()**
+
+### **Scholarship Eligibility - Top Students**
+
+**Use Case**: A university wants to shortlist **top 10 students** (by GPA) in each program for scholarship, allowing for **GPA ties**.
+
+```sql
+sql
+CopyEdit
+SELECT *
+FROM (
+  SELECT student_id, name, program, GPA,
+         RANK() OVER (PARTITION BY program ORDER BY GPA DESC) AS gpa_rank
+  FROM Students
+) ranked
+WHERE gpa_rank <= 10;
+
+```
+
+### **Top Movies per Genre**
+
+**Use Case**: A streaming platform wants to feature top 5 movies **by rating** in each **genre**, allowing tied ratings.
+
+```sql
+sql
+CopyEdit
+SELECT *
+FROM (
+  SELECT title, genre, rating,
+         RANK() OVER (PARTITION BY genre ORDER BY rating DESC) AS genre_rank
+  FROM Movies
+) ranked
+WHERE genre_rank <= 5;
+
+```
+
+1. Dense Rank()
+
+same use as rank but doesnt skips the rank during ties
